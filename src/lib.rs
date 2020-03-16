@@ -4,6 +4,7 @@ extern crate proc_macro;
 
 use self::proc_macro::TokenStream;
 use quote::quote;
+use syn::Type;
 use syn::fold::{self, Fold};
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
@@ -69,8 +70,7 @@ impl Fold for Timing {
         t
     }
 
-    fn fold_trait_item_method(&mut self, i: TraitItemMethod)
-    -> TraitItemMethod {
+    fn fold_trait_item_method(&mut self, i: TraitItemMethod) -> TraitItemMethod {
         if self.is_notiming(&i.attrs) {
             return i;
         }
@@ -84,13 +84,30 @@ impl Fold for Timing {
         if self.is_notiming(&i.attrs) {
             return i;
         }
-        if let Some((_, ref path, _)) = i.trait_ {
-            self.push(format!("{:?} as {:?}", &i.self_ty, path));
+
+        let pushed = if let Type::Path(type_path) = i.self_ty.as_ref() {
+            let combined_type = type_path.path.segments.iter().map(|s| s.ident.to_string()).collect::<Vec<_>>().join("::");
+
+            if let Some((_, ref trait_path, _)) = i.trait_ {
+                let combined_trait = trait_path.segments.iter().map(|s| s.ident.to_string()).collect::<Vec<_>>().join("::");
+    
+                self.push(format!("{:?} as {:?}", combined_type, combined_trait));
+                
+                true
+            } else {
+                self.push(combined_type);
+                true
+            }
         } else {
-            self.push(format!("{:?}", &i.self_ty));
-        }
+            false
+        };
+
         let ii = fold::fold_item_impl(self, i);
-        self.pop();
+
+        if pushed {
+            self.pop();
+        }
+
         ii
     }
 
@@ -98,8 +115,13 @@ impl Fold for Timing {
         if self.is_notiming(&i.attrs) {
             return i;
         }
-        self.push(i.sig.ident.to_string());
-        let method = fold::fold_impl_item_method(self, i);
+        let mut method = fold::fold_impl_item_method(self, i);
+        self.push(method.sig.ident.to_string());
+        let name = self.name();
+        let mut stmts = ::std::mem::replace(&mut method.block.stmts, vec![parse_quote! {
+            let _timing_guard = screeps_timing::start_guard(#name);
+        }]);
+        method.block.stmts.append(&mut stmts);
         self.pop();
         method
     }
@@ -108,17 +130,15 @@ impl Fold for Timing {
         if self.is_notiming(&i.attrs) {
             return i;
         }
-        let mut i = i;
-        self.push(i.sig.ident.to_string());
+        let mut func = fold::fold_item_fn(self, i);
+        self.push(func.sig.ident.to_string());
         let name = self.name();
-        let stmts = ::std::mem::replace(&mut i.block.stmts, vec![parse_quote! {
+        let mut stmts = ::std::mem::replace(&mut func.block.stmts, vec![parse_quote! {
             let _timing_guard = screeps_timing::start_guard(#name);
         }]);
-        for stmt in stmts {
-            i.block.stmts.push(fold::fold_stmt(self, stmt));
-        }
+        func.block.stmts.append(&mut stmts);
         self.pop();
-        i
+        func
     }
 }
 
@@ -126,7 +146,7 @@ impl Fold for Timing {
 pub fn timing(attrs: TokenStream, code: TokenStream) -> TokenStream {
     let input = parse_macro_input!(code as Item);
     let mut timing = parse_macro_input!(attrs as Timing);
-    let item = fold::fold_item(&mut timing, input);
+    let item = timing.fold_item(input);
     TokenStream::from(quote!(#item))
 }
 
