@@ -71,7 +71,7 @@ impl Fold for Timing {
 
     fn fold_trait_item_method(&mut self, i: TraitItemMethod)
     -> TraitItemMethod {
-        if i.sig.constness.is_some() || self.is_notiming(&i.attrs) {
+        if self.is_notiming(&i.attrs) {
             return i;
         }
         self.push(i.sig.ident.to_string());
@@ -95,7 +95,7 @@ impl Fold for Timing {
     }
 
     fn fold_impl_item_method(&mut self, i: ImplItemMethod) -> ImplItemMethod {
-        if i.sig.constness.is_some() || self.is_notiming(&i.attrs) {
+        if self.is_notiming(&i.attrs) {
             return i;
         }
         self.push(i.sig.ident.to_string());
@@ -108,14 +108,11 @@ impl Fold for Timing {
         if self.is_notiming(&i.attrs) {
             return i;
         }
-        if i.sig.constness.is_some() {
-            return fold::fold_item_fn(self, i);
-        }
         let mut i = i;
         self.push(i.sig.ident.to_string());
         let name = self.name();
         let stmts = ::std::mem::replace(&mut i.block.stmts, vec![parse_quote! {
-            let _timing_guard = ::timing::start_guard(#name);
+            let _timing_guard = screeps_timing::start_guard(#name);
         }]);
         for stmt in stmts {
             i.block.stmts.push(fold::fold_stmt(self, stmt));
