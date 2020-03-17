@@ -1,6 +1,6 @@
 Add to your cargo.toml:
 
-`
+~~~
 [features]
 default = ["profile"]
 profile = ["screeps-timing", "screeps-timing-annotate"]
@@ -10,11 +10,11 @@ screeps-timing = { git = "https://github.com/Azaril/screeps-timing", optional = 
 screeps-timing-annotate = { git = "https://github.com/Azaril/screeps-timing-annotate", optional = true }
 serde = "1.0"
 serde_json = "1.0"
-`
+~~~
 
 Minimum setup for timing a main loop tick and dumping it to console.
 
-`
+~~~
 fn main_loop() {
     #[cfg(feature = "profile")]
     {
@@ -32,44 +32,41 @@ fn main_loop() {
         }
     }   
 }
-`
+~~~
 
 Annotating a function:
 
-`
+~~~
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 fn test() {
-
 }
-`
+~~~
 
 Annotating a module:
 
-`
+~~~
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 mod game_loop {
     pub fn tick() {
-
     }
 }
-`
+~~~
 
 Annotating an entire impl:
 
-`
+~~~
 struct Foo;
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
 impl Foo {
     pub fn test() {
-
     }
 }
-`
+~~~
 
-Annotating a trait:
+Annotating a trait impl:
 
-`
+~~~
 struct Foo;
 
 #[cfg_attr(feature = "profile", screeps_timing_annotate::timing)]
@@ -78,4 +75,4 @@ impl Into<u32> for Foo {
         0
     }
 }
-`
+~~~
