@@ -76,3 +76,7 @@ impl Into<u32> for Foo {
     }
 }
 ~~~
+
+Copy the output from the the console in to a .json file.
+In Chrome navigate to chrome://tracing
+Click the 'load' option and select your .json file.
