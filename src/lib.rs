@@ -31,12 +31,10 @@ impl Timing {
     }
 
     fn is_notiming(&self, i: &[Attribute]) -> bool {
-        i.iter().any(|ref a| if a.path.segments.len() == 1 {
-            let ident = &a.path.segments.iter().next().unwrap().ident;
-            ident == "timing" || ident == "notiming"
-        } else {
-            false
-        })
+        i.iter().any(|ref a| 
+            a.path.is_ident("timing") || a.path.is_ident("screeps_timing_annotate::timing") || 
+            a.path.is_ident("notiming") || a.path.is_ident("screeps_timing_annotate::notiming")
+        )
     }
 }
 
