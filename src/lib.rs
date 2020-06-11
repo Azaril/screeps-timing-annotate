@@ -1,16 +1,18 @@
-extern crate syn;
-extern crate quote;
 extern crate proc_macro;
+extern crate quote;
+extern crate syn;
 
 use self::proc_macro::TokenStream;
 use quote::quote;
-use syn::Type;
 use syn::fold::{self, Fold};
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
+use syn::Type;
 
-use syn::{parse_macro_input, parse_quote, Attribute, ImplItemMethod, Item,
-          ItemFn, ItemImpl, ItemMod, ItemTrait, TraitItemMethod, Token};
+use syn::{
+    parse_macro_input, parse_quote, Attribute, ImplItemMethod, Item, ItemFn, ItemImpl, ItemMod,
+    ItemTrait, Token, TraitItemMethod,
+};
 
 #[derive(Default)]
 struct Timing {
@@ -31,10 +33,12 @@ impl Timing {
     }
 
     fn is_notiming(&self, i: &[Attribute]) -> bool {
-        i.iter().any(|ref a| 
-            a.path.is_ident("timing") || a.path.is_ident("screeps_timing_annotate::timing") || 
-            a.path.is_ident("notiming") || a.path.is_ident("screeps_timing_annotate::notiming")
-        )
+        i.iter().any(|ref a| {
+            a.path.is_ident("timing")
+                || a.path.is_ident("screeps_timing_annotate::timing")
+                || a.path.is_ident("notiming")
+                || a.path.is_ident("screeps_timing_annotate::notiming")
+        })
     }
 }
 
@@ -84,13 +88,24 @@ impl Fold for Timing {
         }
 
         let pushed = if let Type::Path(type_path) = i.self_ty.as_ref() {
-            let combined_type = type_path.path.segments.iter().map(|s| s.ident.to_string()).collect::<Vec<_>>().join("::");
+            let combined_type = type_path
+                .path
+                .segments
+                .iter()
+                .map(|s| s.ident.to_string())
+                .collect::<Vec<_>>()
+                .join("::");
 
             if let Some((_, ref trait_path, _)) = i.trait_ {
-                let combined_trait = trait_path.segments.iter().map(|s| s.ident.to_string()).collect::<Vec<_>>().join("::");
-    
+                let combined_trait = trait_path
+                    .segments
+                    .iter()
+                    .map(|s| s.ident.to_string())
+                    .collect::<Vec<_>>()
+                    .join("::");
+
                 self.push(format!("{:?} as {:?}", combined_type, combined_trait));
-                
+
                 true
             } else {
                 self.push(combined_type);
@@ -116,9 +131,12 @@ impl Fold for Timing {
         let mut method = fold::fold_impl_item_method(self, i);
         self.push(method.sig.ident.to_string());
         let name = self.name();
-        let mut stmts = ::std::mem::replace(&mut method.block.stmts, vec![parse_quote! {
-            let _timing_guard = screeps_timing::start_guard(#name);
-        }]);
+        let mut stmts = ::std::mem::replace(
+            &mut method.block.stmts,
+            vec![parse_quote! {
+                let _timing_guard = screeps_timing::start_guard(#name);
+            }],
+        );
         method.block.stmts.append(&mut stmts);
         self.pop();
         method
@@ -131,9 +149,12 @@ impl Fold for Timing {
         let mut func = fold::fold_item_fn(self, i);
         self.push(func.sig.ident.to_string());
         let name = self.name();
-        let mut stmts = ::std::mem::replace(&mut func.block.stmts, vec![parse_quote! {
-            let _timing_guard = screeps_timing::start_guard(#name);
-        }]);
+        let mut stmts = ::std::mem::replace(
+            &mut func.block.stmts,
+            vec![parse_quote! {
+                let _timing_guard = screeps_timing::start_guard(#name);
+            }],
+        );
         func.block.stmts.append(&mut stmts);
         self.pop();
         func
