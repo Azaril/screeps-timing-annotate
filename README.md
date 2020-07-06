@@ -18,7 +18,7 @@ Minimum setup for timing a main loop tick and dumping it to console.
 fn main_loop() {
     #[cfg(feature = "profile")]
     {
-        screeps_timing::start_trace(|| (screeps::game::cpu::get_used() * 1000.0) as u64);
+        screeps_timing::start_trace(Box::new(|| (screeps::game::cpu::get_used() * 1000.0) as u64));
     }
     
     game_loop::tick();
