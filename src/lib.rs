@@ -33,7 +33,7 @@ impl Timing {
     }
 
     fn is_notiming(&self, i: &[Attribute]) -> bool {
-        i.iter().any(|ref a| {
+        i.iter().any(|a| {
             a.path.is_ident("timing")
                 || a.path.is_ident("screeps_timing_annotate::timing")
                 || a.path.is_ident("notiming")
