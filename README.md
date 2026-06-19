@@ -18,7 +18,10 @@ Minimum setup for timing a main loop tick and dumping it to console.
 fn main_loop() {
     #[cfg(feature = "profile")]
     {
+        // For Screeps World
         screeps_timing::start_trace(Box::new(|| (screeps::game::cpu::get_used() * 1000.0) as u64));
+        // For Screeps Arena
+        // screeps_timing::start_trace(Box::new(|| screeps_arena::game::utils::get_cpu_time() as u64 / 1000));
     }
     
     game_loop::tick();
@@ -78,5 +81,5 @@ impl Into<u32> for Foo {
 ~~~
 
 * Copy the output from the the console in to a .json file.
-* In Chrome navigate to chrome://tracing
+* In Chrome navigate to chrome://tracing or https://ui.perfetto.dev (works in firefox)
 * Click the 'load' option and select your .json file.
